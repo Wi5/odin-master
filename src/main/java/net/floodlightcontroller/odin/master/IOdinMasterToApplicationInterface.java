@@ -10,6 +10,7 @@ import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
+import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionTextParams;
 import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.util.MACAddress;
 
@@ -269,7 +270,15 @@ interface IOdinMasterToApplicationInterface {
 	 * 
 	 */
 	SmartApSelectionParams getSmartApSelectionParams ();
-	
+
+	/**
+	 * Return SmartApSelectionTextParams for SmartApSelectionText App
+	 * 
+	 * @return SmartApSelectionTextParams
+	 * 
+	 */
+	SmartApSelectionTextParams getSmartApSelectionTextParams ();
+
 	/**
 	 * Get txpower from and specific agent (AP)
 	 * 

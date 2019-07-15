@@ -1,0 +1,13 @@
+[SmartAPSelection] Log file SmartApSelectionLog.txt
+[SmartAPSelection] Parameters:
+	Time_to_start: 50000
+	Scanning_interval: 200
+	Added_time: 0
+	Signal_threshold: -56.0
+	Hysteresis_threshold: 4
+	Previus_data_weight (alpha): 0.8
+	Pause between scans: 0
+	Mode: RSSI
+	TxpowerSTA: 10
+	TxpowerSTA: 2000.0
+	Filename: SmartApSelectionLog.txt

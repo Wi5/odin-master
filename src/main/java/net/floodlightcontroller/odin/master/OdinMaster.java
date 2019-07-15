@@ -79,7 +79,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 
 	private static String detector_ip_address = "0.0.0.0"; // Detector Ip Address not assigned
 	
-    private static String vip_ap_ip_address = "0.0.0.0"; // Detector Ip Address not assigned
+  private static String vip_ap_ip_address = "0.0.0.0"; // Detector Ip Address not assigned
 	
 	private static MobilityParams mobility_params; // MobilityManager parameters
 	
@@ -90,7 +90,9 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 	private static ChannelAssignmentParams channel_params; // ChannelAssignment parameters
 	
 	private static SmartApSelectionParams smartap_params; // SmartApSelection parameters
-	
+
+	private static SmartApSelectionTextParams smartap_text_params; // SmartApSelectionText parameters
+
 	// some defaults
 	static private final String DEFAULT_POOL_FILE = "poolfile";
 	static private final String DEFAULT_CLIENT_LIST_FILE = "odin_client_list";
@@ -1029,6 +1031,17 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 	}
 	
 	/**
+	 * Get SmartApSelectionText parameters
+	 * 
+	 * @return SmartApSelectionText parameters
+	 */
+	@Override
+	public SmartApSelectionTextParams getSmartApSelectionTextParams (){
+		return OdinMaster.smartap_text_params;
+		
+	}
+	
+	/**
 	 * Get TxPower from and specific agent (AP)
 	 * 
 	 * @param Pool
@@ -1316,6 +1329,32 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 						log.info("\t\tThReqSTA: " + smartap_params.thReqSTA);
 						if(smartap_params.filename.length()>0){
                             log.info("\t\tFilename: " + smartap_params.filename);
+                        }else{
+                            log.info("\t\tFilename not assigned");
+                        }
+						br.mark(1000);
+						continue;
+					}
+					
+					if (fields[0].equals("SMARTAPSELECTIONTEXT")){							// SMART AP SELECTION TEXT
+                        if(fields.length==12){// Filename added in poolfile
+                            smartap_text_params = new SmartApSelectionTextParams(Integer.parseInt(fields[1]),Integer.parseInt(fields[2]),Integer.parseInt(fields[3]),Double.parseDouble(fields[4]),Long.parseLong(fields[5]), Double.parseDouble(fields[6]),Integer.parseInt(fields[7]), fields[8],Integer.parseInt(fields[9]), Double.parseDouble(fields[10]), fields[11]);
+                        }else{
+                            smartap_text_params = new SmartApSelectionTextParams(Integer.parseInt(fields[1]),Integer.parseInt(fields[2]),Integer.parseInt(fields[3]),Double.parseDouble(fields[4]),Long.parseLong(fields[5]), Double.parseDouble(fields[6]),Integer.parseInt(fields[7]), fields[8],Integer.parseInt(fields[9]), Double.parseDouble(fields[10]), "");
+                        }
+						log.info("SmartApSelectionText configured:");
+						log.info("\t\tTime_to_start: " + smartap_text_params.time_to_start);
+						log.info("\t\tScanning_interval: " + smartap_text_params.scanning_interval);
+						log.info("\t\tAdded_time: " + smartap_text_params.added_time);
+						log.info("\t\tSignal_threshold: " + smartap_text_params.signal_threshold);
+						log.info("\t\tHysteresis_threshold: " + smartap_text_params.hysteresis_threshold);
+						log.info("\t\tPrevius_data_weight (alpha): " + smartap_text_params.weight);
+						log.info("\t\tPause between scans: " + smartap_text_params.pause);
+						log.info("\t\tMode: " + smartap_text_params.mode);
+						log.info("\t\tTxpowerSTA: " + smartap_text_params.txpowerSTA);
+						log.info("\t\tThReqSTA: " + smartap_text_params.thReqSTA);
+						if(smartap_text_params.filename.length()>0){
+                            log.info("\t\tFilename: " + smartap_text_params.filename);
                         }else{
                             log.info("\t\tFilename not assigned");
                         }
@@ -1758,6 +1797,35 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 			this.filename = filename;
 		}
 	}
+
+		public class SmartApSelectionTextParams {
+		public int time_to_start;
+		public int scanning_interval;
+		public int added_time;
+		public Double signal_threshold;
+		public long hysteresis_threshold;
+		public Double weight;
+		public int pause;
+		public String mode;
+		public int txpowerSTA;
+		public Double thReqSTA;
+		public String filename;
+
+		public SmartApSelectionTextParams (int time_to_start, int scanning_interval, int added_time, Double signal_threshold, long hysteresis_threshold, Double weight, int pause, String mode, int txpowerSTA, Double thReqSTA, String filename) {
+			this.time_to_start = time_to_start*1000;
+			this.scanning_interval = scanning_interval;
+			this.added_time = added_time;
+			this.signal_threshold = signal_threshold;
+			this.hysteresis_threshold = hysteresis_threshold;
+			this.weight = weight;
+			this.pause = pause*1000;
+            this.mode = mode;
+            this.txpowerSTA = txpowerSTA;
+			this.thReqSTA = thReqSTA;
+			this.filename = filename;
+		}
+	}
+
  	@Override
 	public IStorageSourceService getStorageService() {
 		return storageSourceService;

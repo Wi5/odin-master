@@ -42,7 +42,8 @@ public class AgentManagerResource extends ServerResource {
 
 	    	int numberOfClients = oc.getClientsFromAgent(PoolManager.GLOBAL_POOL, agentAddr).size();
 
-	    	OdinAgentStorage newAgent = new OdinAgentStorage(agentAddr, lastheard, chann, "wi5-demo", lastheard, txPower, numberOfClients);
+	    	// FIXME: the SSID is hardcoded here and it should not
+	    	OdinAgentStorage newAgent = new OdinAgentStorage(agentAddr, lastheard, chann, "wi5orange", lastheard, txPower, numberOfClients);
 
 	    	res.add(newAgent);
 		}		

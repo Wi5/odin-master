@@ -58,7 +58,7 @@ public class MemoryTable {
     }
     
     void insertRow(Object key, Map<String,Object> rowValues) {
-        assert(key != null);
+    	assert(key != null);
         rowMap.put(key, rowValues);
     }
     

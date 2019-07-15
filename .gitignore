@@ -10,4 +10,3 @@ thrift
 logback.xml
 target/bin/
 /bin/
-src/main/java/net/floodlightcontroller/odin/master/OdinEventFlowDetection.java

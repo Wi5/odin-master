@@ -15,6 +15,14 @@ import net.floodlightcontroller.odin.master.OdinApplication;
 import net.floodlightcontroller.odin.master.OdinClient;
 import net.floodlightcontroller.util.MACAddress;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 public class DemoStatistics extends OdinApplication {
 
   // IMPORTANT: this application only works if all the agents in the
@@ -57,6 +65,16 @@ public class DemoStatistics extends OdinApplication {
     InetAddress[] agents = getAgents().toArray(new InetAddress[0]);
     
     int num_agents = agents.length;
+    try {
+    		System.out.println("[DemoStatistics] =============================================================");
+    		System.out.println("[DemoStatistics] ===================LANZANDO HTTP SERVER======================");
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.createContext("/test", new MyHandler());
+        server.setExecutor(null); // creates a default executor
+        server.start();
+    } catch (Exception  e) {
+	      e.printStackTrace();
+	    }
 
     while (true) {
       try {
@@ -533,6 +551,18 @@ public class DemoStatistics extends OdinApplication {
 	    }
     }
   }
+  
+  
+  static class MyHandler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange t) throws IOException {
+      String response = "This is the response";
+      t.sendResponseHeaders(200, response.length());
+      OutputStream os = t.getResponseBody();
+      System.out.println("[DemoStatistics] HTTP REQUEST");
+    }
+  }
+
   public int promptKey(){ // Function to ask for a key
     int key;
     Scanner scanner = new Scanner(System.in);

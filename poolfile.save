@@ -1,0 +1,77 @@
+# Pool-1
+NAME pool-1
+NODES 192.168.1.13 192.168.1.14 192.168.1.15
+NETWORKS wi5-demo
+
+####### Now applications and its parameters are defined ######
+
+####### FlowDetectionManager params
+####### DETECTION IpAddressOfDetector
+# APPLICATION net.floodlightcontroller.odin.applications.FlowDetectionManager
+# DETECTION 192.168.1.200
+
+####### ShowStatistics
+# APPLICATION net.floodlightcontroller.odin.applications.ShowStatistics
+
+####### SimpleLoadBalancer
+# APPLICATION net.floodlightcontroller.odin.applications.SimpleLoadBalancer
+
+####### MobilityManager params
+####### MOBILITY TimeToStart(sec) IdleClient(sec) Hysteresis(sec) SignalThreshold(dBm) ScanningTime(sec) NumberOfTriggers TimerResetTriggers(sec)
+# APPLICATION net.floodlightcontroller.odin.applications.MobilityManager
+# MOBILITY 30 180 15 -56 1 5 1
+
+####### ShowScannedStationsStatistics params - Optional filename to save statistics
+####### INTERFERENCES TimeToStart(sec) ReportingPeriod(sec) ScanningInterval(sec) AddedTime(sec) Filename
+# APPLICATION net.floodlightcontroller.odin.applications.ShowScannedStationsStatistics
+# INTERFERENCES 30 30 5 1 ScannedStationsStatistics.txt
+
+####### ShowMatrixOfDistancedBs params
+####### MATRIX TimeToStart(sec) ReportingPeriod(sec) ScanningInterval(sec) AddedTime(sec) Channel
+# APPLICATION net.floodlightcontroller.odin.applications.ShowMatrixOfDistancedBs
+# MATRIX 30 30 2 1 6
+
+####### ChannelAssignment params
+#######
+#######Start
+#######  |       Scan      Scan    Scan, II & Algorithm                  Restart
+#######  |         |         |    ...     |      II & Alg   II & Alg        |
+#######  |_________V_________V____________V_________V__________V____________V______
+#######  <--------><--------><-------->...<---------><---------><------->...<------  t
+#######     Pause     Pause     Pause         Pause     Pause     Pause     
+#######                                   <--------------------------------->
+#######                                             IdleTime
+#######
+####### CHANNEL TimeToStart(sec) PauseBetweenScans(sec) ScanningInterval(sec) AddedTime(sec) NumberOfScans IdleTime(sec) Channel Method Threshold Mode Filename
+####### Method = 1 : Wi5, 2 : RANDOM, 3 : LCC  ;
+####### Mode = auto, manual : it allows to manually force channel assignment for testing
+# APPLICATION net.floodlightcontroller.odin.applications.ChannelAssignment_II
+# CHANNEL 30 5 3 1 3 180 6 1 -50 manual ChannelAssignmentLog.txt
+
+####### Interactive (prompt-based) application, which allows the user to introduce a channel number for each AP throught the keyboard
+# APPLICATION net.floodlightcontroller.odin.applications.ChannelPrompt
+
+####### Continuous loop (10 sec) between the 11 channels of 2.4 GHz. The application moves an AP between all the channels
+# APPLICATION net.floodlightcontroller.odin.applications.ChannelLoop
+
+####### Smart Ap Selection params
+####### SMARTAPSELECTION TimeToStart(sec) ScanningInterval(msec) AddedTime(msec) SignalThreshold(dBm) Hysteresis(sec) Alpha(0-1) Pause(sec) Mode TxpowerSTA(dBm) ThReqSTA(kbps) Filename
+####### Mode = RSSI, FF, BALANCER, DETECTOR; Choose between RSSI, FittingnessFactor algorithm, Balancer or Detector modes
+# APPLICATION net.floodlightcontroller.odin.applications.SmartApSelection
+# SMARTAPSELECTION 50 200 0 -56 4 0.8 0 DETECTOR 10 2000 SmartApSelectionLog.txt
+
+####### Demo Statistics
+# APPLICATION net.floodlightcontroller.odin.applications.DemoStatistics
+
+###### Demo Graph
+APPLICATION net.APPLICATION net.flood
+
+
+####### VIP AP IP Address
+# VIPAP 192.168.1.14
+
+# Pool-2
+#NAME pool-2
+#NODES 192.168.1.5 192.168.1.6
+#NETWORKS odin-unizar
+#APPLICATIONS

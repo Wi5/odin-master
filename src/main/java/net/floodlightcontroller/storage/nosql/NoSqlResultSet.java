@@ -63,10 +63,10 @@ public class NoSqlResultSet implements IResultSet {
     
     @Override
     public Map<String,Object> getRow() {
-        if ((currentIndex < 0) || (currentIndex >= rowList.size())) {
+        if ((currentIndex < 0) || (currentIndex >= rowList.size())) {  
             throw new StorageException("No current row in result set.");
         }
-        
+
         return rowList.get(currentIndex);
     }
 
