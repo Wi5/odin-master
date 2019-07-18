@@ -708,7 +708,7 @@ class OdinAgent implements IOdinAgent {
 
 
 	/**
-	 * Request scanned stations statistics from the agent
+	 * Request the agent to start sending measurement beacons
 	 * @param agentAddr InetAddress of the agent
 	 * @param #channel to send measurement beacon
 	 * @param time interval to send measurement beacon
@@ -740,7 +740,7 @@ class OdinAgent implements IOdinAgent {
 	
 
 	/**
-	 * Stop sending measurement beacon from the agent
+	 * Request the agent to stop sending measurement beacons
 	 * 
 	 * @param agentAddr InetAddress of the agent
 	 * 
@@ -790,7 +790,7 @@ class OdinAgent implements IOdinAgent {
 	}
 	
 	/**
-	 * Retreive scanned wi5 stations rssi from the agent
+	 * Retrieve scanned wi5 stations rssi from the agent
 	 * @param agentAddr InetAddress of the agent
 	 * @return Key-Value entries of each recorded rssi for each wi5 station 
 	 */

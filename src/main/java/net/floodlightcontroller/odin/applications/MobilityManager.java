@@ -80,7 +80,6 @@ public class MobilityManager extends OdinApplication {
     if (debugLevel >= 1) {
       System.out.println("[MobilityManager] Subscriptions registered");
     }
-		
     //log.info("MobilityManager: register"); 
 	}
 
@@ -120,7 +119,8 @@ public class MobilityManager extends OdinApplication {
                                         + " in agent " + cntx.agent.getIpAddress());*/
 
     if (debugLevel >= 1) {
-      System.out.println("[MobilityManager] publish received from agent " + cntx.clientHwAddress + " in agent " + cntx.agent.getIpAddress());
+      System.out.println("[MobilityManager] Inside 'handler()'");
+      System.out.println("[MobilityManager] 'publish' received from agent " + cntx.clientHwAddress + ", " + cntx.agent.getIpAddress());
     }   
 		/* The client is not registered in this controller, exit */
 		if (client == null) {
@@ -188,7 +188,7 @@ public class MobilityManager extends OdinApplication {
 			
 	    if (debugLevel >= 1) {
 	      System.out.println("[MobilityManager] The notification is from the agent " + cntx.agent.getIpAddress() 
-	        + " that is hosting the client" );
+	        + " that is hosting the client " + cntx.clientHwAddress);
 	    }
 			
 			/* Scan and update statistics */
@@ -196,17 +196,21 @@ public class MobilityManager extends OdinApplication {
 			client_signal_dBm = stats.signalStrength - 256;
 			client_average_dBm = stats.client_average - 256;
 			client_triggers = stats.client_triggers;
-			//log.info("MobilityManager: Triggers: "+ client_triggers);
 			
-			//log.info("MobilityManager: STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
+			log.info("MobilityManager: Triggers: "+ client_triggers);
+			log.info("MobilityManager: STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
 
       if (debugLevel >= 1) {
-        System.out.println("[MobilityManager] Triggers: "+ client_triggers);
+        System.out.println("[MobilityManager] Num triggers: " + client_triggers);
         System.out.println("[MobilityManager] STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
       }
 			
 			if (client_triggers != MOBILITY_PARAMS.number_of_triggers){
-				
+				// not enough number of triggers
+        if (debugLevel >= 1) {
+          System.out.println("[MobilityManager] Not enough number of triggers (" + stats.client_triggers + ") required " + MOBILITY_PARAMS.number_of_triggers);
+        }			  
+			  
 				client_signal = Math.pow(10.0, (client_signal_dBm) / 10.0); // Linear power
 				//log.info("client_signal: "+ client_signal);
 				client_average = Math.pow(10.0, (client_average_dBm) / 10.0); // Linear power average
@@ -215,62 +219,70 @@ public class MobilityManager extends OdinApplication {
 				//log.info("client_average: "+ client_average);
 				client_average_dBm = Math.round(10.0*Math.log10(client_average)); //Average power in dBm
         //log.info("client_average_dBm: "+ client_average_dBm);
-        client_triggers++; // Increase number of triggers that will be used to calculate average power
+
         if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] client_signal: "+ client_signal);
-          System.out.println("[MobilityManager] client_average linear: "+ client_average);
-          System.out.println("[MobilityManager] client_average_dbm: "+ client_average_dBm);
-          System.out.println("[MobilityManager] client_triggers: "+ client_triggers);
-        }
-        updateStatsScans(stats, currentTimestamp, client_average_dBm + 256, client_triggers);
-        clientMap.put(cntx.clientHwAddress,stats);
-        //log.info("MobilityManager: STA average power in this client: "+ stats.client_average + " (" + client_average_dBm + "dBm)");
-        //log.info("MobilityManager: Triggers: "+ stats.client_triggers);
-        if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] STA average power in this client:  "+ stats.client_average + " (" + client_average_dBm + "dBm");
-          System.out.println("[MobilityManager] Triggers" + stats.client_triggers);
+          System.out.println("[MobilityManager] client RSSI (mW): "+ client_signal / 1000.0);
+          System.out.println("[MobilityManager] client average RSSI (mW): "+ client_average / 1000.0);
+          System.out.println("[MobilityManager] client average RSSI (dBm): "+ client_average_dBm);
+          System.out.println("[MobilityManager] client num triggers: "+ client_triggers);
         }
         
+        client_triggers++; // Increase number of triggers that will be used to calculate average power   
+        
+        updateStatsScans(stats, currentTimestamp, client_average_dBm + 256, client_triggers);
+        
+        clientMap.put(cntx.clientHwAddress,stats);
+        
+        //log.info("MobilityManager: STA average power in this client: "+ stats.client_average + " (" + client_average_dBm + " dBm)");
+        //log.info("MobilityManager: Triggers: "+ stats.client_triggers);
+                
 				return;
 				
 			} else { // client_triggers == MOBILITY_PARAMS.number_of_triggers
-				
+
+        if (debugLevel >= 1) {
+          System.out.println("[MobilityManager] Required number of triggers reached (" + stats.client_triggers + ") required " + MOBILITY_PARAMS.number_of_triggers);
+        }
+        
 				updateStatsScans(stats,currentTimestamp, 0, 0);
 				clientMap.put(cntx.clientHwAddress,stats);
 				
-				// Don't bother if we're not within hysteresis period
+				// Don't do anything if the hysteresis period has not finished
         if (currentTimestamp - stats.assignmentTimestamp < MOBILITY_PARAMS.hysteresis_threshold) {
           if (debugLevel >= 1) {
-            System.out.println("[MobilityManager] hystheresis threshold not reached ("+ MOBILITY_PARAMS.hysteresis_threshold + ")");
+            System.out.println("[MobilityManager] Hystheresis threshold not reached ("+ MOBILITY_PARAMS.hysteresis_threshold + ")");
           }          
           return;
         }
         
-        log.info("MobilityManager: Scan triggered with average power: "+ (client_average_dBm + 256) + " (" + client_average_dBm + "dBm)");
-        
+        // number of triggers reached & hysteresis period finished => start the handoff process
+        //log.info("MobilityManager: Scan for STA " + cntx.clientHwAddress + " in channel " + getChannelFromAgent(cntx.agent.getIpAddress()) + " triggered");        
         if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] Scan triggered with average power: "+ (client_average_dBm + 256) + " (" + client_average_dBm + "dBm)");
+          System.out.println("[MobilityManager] Scan for STA " + cntx.clientHwAddress + " in channel " + getChannelFromAgent(cntx.agent.getIpAddress()) + " triggered");
         }
 			}
 			
+			// ask the rest of the Agents to scan for this STA in the channel of the Agent where it is associated, i.e. getChannelFromAgent(cntx.agent.getIpAddress())
 			for (InetAddress agentAddr: getAgents()) { // FIXME: scan for nearby agents only 
-				// This is the agent where the STA is associated, so we don't scan
+
 				if (cntx.agent.getIpAddress().equals(agentAddr)) {
-					log.info("MobilityManager: Do not Scan client " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
+	        // This is the agent where the STA is associated, so we don't scan
+					log.info("MobilityManager: Do not Scan for STA " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
 	        if (debugLevel >= 1) {
-	          System.out.println("[MobilityManager] Do not Scan client " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
+	          System.out.println("[MobilityManager] Do not Scan for STA " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
 	        }
 					continue; // Skip same AP
 				}
-				// Scanning in the rest of APs
+
 				else {
+	        // This is NOT the agent where the STA is associated, so it has to scan for it, with the auxiliary interface, in the channel of the Agent where the STA is
 					log.info("MobilityManager: Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
 					if (debugLevel >= 1) {
-            System.out.println("MobilityManager: Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
+            System.out.println("[MobilityManager] Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
 					}
-					// Send the scanning request to the agent
 					
-          lastScanningResult = scanClientFromAgent(agentAddr, cntx.clientHwAddress, getChannelFromAgent(cntx.agent.getIpAddress()), this.MOBILITY_PARAMS.scanning_time);
+					// Send the scanning request to the agent
+					lastScanningResult = scanClientFromAgent(agentAddr, cntx.clientHwAddress, getChannelFromAgent(cntx.agent.getIpAddress()), this.MOBILITY_PARAMS.scanning_time);
           //log.info("MobilityManager: Last Scanning Result: "+lastScanningResult);
                     
           //scan = false; // For testing only once
@@ -278,8 +290,13 @@ public class MobilityManager extends OdinApplication {
 						
 					if (lastScanningResult > stats.signalStrength) {
 						//greaterscanningresult = stats.signalStrength; 
-						greaterscanningresult = lastScanningResult;// 
+						greaterscanningresult = lastScanningResult;
+						// update the statistics, assigning the address of this Agent (agentAddr) as the best one
 						updateStatsWithReassignment(stats, lastScanningResult, currentTimestamp, agentAddr, greaterscanningresult);
+			      if (debugLevel >= 1) {
+			        System.out.println("[MobilityManager] Updated statistics with reassignment of STA " + cntx.clientHwAddress
+			            + " to Agent " + stats.agentAddr + " (RSSI " + stats.signalStrength + ")");
+			      }
 					}
 					else if (greaterscanningresult < lastScanningResult) { // 
 					  greaterscanningresult = lastScanningResult;
@@ -293,11 +310,14 @@ public class MobilityManager extends OdinApplication {
       }
 			
 			if (cntx.agent.getIpAddress().equals(stats.agentAddr)) {
+			  // This is the agent where the STA is associated
+			  // update the statistic of the scanning result
+			  // No handoff
 				stats.scanningResult = greaterscanningresult;
 				clientMap.put(cntx.clientHwAddress,stats);
 				log.info("MobilityManager: no hand off");
 				if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] no hand off");
+          System.out.println("[MobilityManager] No hand off");
 				}
 				return;
 			}
@@ -305,14 +325,17 @@ public class MobilityManager extends OdinApplication {
 			log.info("MobilityManager: signal strength: new = " + stats.signalStrength + " old = " + cntx.value + " handing off client " + cntx.clientHwAddress
 						+ " to agent " + stats.agentAddr);
 			if (debugLevel >= 1) {
-			  System.out.println("[MobilityManager] signal strength: new = " + stats.signalStrength + " old = " + cntx.value + " handing off client " + cntx.clientHwAddress
-           + " to agent " + stats.agentAddr);
+			  System.out.println("[MobilityManager] signal strength: new = " + stats.signalStrength + " old = " + cntx.value);
+        System.out.println("[MobilityManager] Ordering the hand off of STA" + cntx.clientHwAddress
+            + " to agent " + stats.agentAddr);
 			}
+			
+			// order the handoff
 			handoffClientToAp(cntx.clientHwAddress, stats.agentAddr);
 			clientMap.put(cntx.clientHwAddress,stats);
 			//log.info("\n*\n*\n*\n*\n*\n*");
       if (debugLevel >= 1) {
-        System.out.println("[MobilityManager] ending the handler");
+        System.out.println("[MobilityManager] Ending the handler");
       }
 			return;
 		}
@@ -333,7 +356,6 @@ public class MobilityManager extends OdinApplication {
 		stats.assignmentTimestamp = now;
 		stats.agentAddr = agentAddr;
 		stats.scanningResult = scanningResult;
-		
 	}
 	
 	
@@ -345,7 +367,7 @@ public class MobilityManager extends OdinApplication {
 	 * @param triggers
 	 */
 	private void updateStatsScans (MobilityStats stats, long now, long average, int triggers) {
-        stats.lastHeard = now;
+    stats.lastHeard = now;
 		stats.client_average = average;
 		stats.client_triggers = triggers;
 	}
@@ -357,11 +379,14 @@ public class MobilityManager extends OdinApplication {
 	 * @param time
 	 */
 	private void giveTime (int time) {
+    if (debugLevel >= 1) {
+      System.out.println("[MobilityManager] Initial sleeping " + time + " seconds");
+    }  
 		try {
-					Thread.sleep(time);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+			Thread.sleep(time);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 		
 	/**

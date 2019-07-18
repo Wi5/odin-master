@@ -336,12 +336,11 @@ public class SmartApSelectionText extends OdinApplication {
         System.out.println("\033[K\r[SmartApSelectionText] Proactive AP Handoff");
         System.out.println("\033[K\r[SmartApSelectionText]");
 
-
-
         for (OdinClient oc: clients) { // Create array with client channels and their indexes for better data processing
 
           ind_aux = 0;
-
+          // get the channel of this client
+          // this requires the use of the 'odinagent.channel' handler
           client_channel = getChannelFromAgent(oc.getLvap().getAgent().getIpAddress());
 
           for (int chann: channels){
@@ -357,7 +356,6 @@ public class SmartApSelectionText extends OdinApplication {
         time = System.currentTimeMillis();
 
         //For each channel used in owned APs
-
         for (int channel = 0 ; channel < num_channels ; ++channel) {
 
           if(channels[channel]==0)
@@ -369,12 +367,13 @@ public class SmartApSelectionText extends OdinApplication {
             System.out.println("\033[K\r[SmartApSelectionText] Requesting statistics from an agent " + agentAddr);
 
             // Request statistics
-            result = requestScannedStationsStatsFromAgent(agentAddr, channels[channel], SCANNED_SSID);    
+            result = requestScannedStationsStatsFromAgent(agentAddr, channels[channel], SCANNED_SSID);// this uses the write handler WRITE_HANDLER_SCAN_APS
             scanningAgents.put(agentAddr, result);
 
             System.out.println("\033[K\r[SmartApSelectionText] Requested statistics from an agent " + agentAddr);
           }         
 
+          // wait until the end of the scanning interval
           try {
             Thread.sleep(SMARTAP_TEXT_PARAMS.scanning_interval + SMARTAP_TEXT_PARAMS.added_time);
           } 
@@ -382,8 +381,8 @@ public class SmartApSelectionText extends OdinApplication {
             e.printStackTrace();
           }
 
+          // retrieve the statistics scanned by each agent
           for (InetAddress agentAddr: agents) {
-
             System.out.println("\033[K\r[SmartApSelectionText] Retrieving statistics from an agent " + agentAddr);
 
             // Reception statistics 
