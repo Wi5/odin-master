@@ -2,6 +2,7 @@ package net.floodlightcontroller.odin.applications;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.math.*;
@@ -23,6 +24,8 @@ import net.floodlightcontroller.util.MACAddress;
 public class MobilityManager extends OdinApplication {
   
   private final int debugLevel = 1;
+  private final int logInfo = 0;
+  private String logMessage;
   
 	protected static Logger log = LoggerFactory.getLogger(MobilityManager.class);
 	/* A table including each client and its mobility statistics */
@@ -60,10 +63,10 @@ public class MobilityManager extends OdinApplication {
 	 * Register subscriptions
 	 */
 	private void init () {
-    if (debugLevel >= 1) {
-      System.out.println("[MobilityManager] Starting 'init()'");
-    }     
-	  
+	  logMessage = "[MobilityManager] Starting 'init()'";
+    if (debugLevel >= 1) System.out.println(logMessage);
+    if (logInfo >= 1) log.info(logMessage);
+    
 		OdinEventSubscription oes = new OdinEventSubscription();
 		/* FIXME: Add something in order to subscribe more than one STA */
 		oes.setSubscription(this.STA, this.VALUE, Relation.LESSER_THAN, this.MOBILITY_PARAMS.signal_threshold); 
@@ -77,10 +80,9 @@ public class MobilityManager extends OdinApplication {
 		/* Before executing this line, make sure the agents declared in poolfile are started */	
 		registerSubscription(oes, cb);
 		
-    if (debugLevel >= 1) {
-      System.out.println("[MobilityManager] Subscriptions registered");
-    }
-    //log.info("MobilityManager: register"); 
+    logMessage = "[MobilityManager] Subscriptions registered";
+    if (debugLevel >= 1) System.out.println(logMessage);
+    if (logInfo >= 1) log.info(logMessage);
 	}
 
 	@Override
@@ -113,20 +115,20 @@ public class MobilityManager extends OdinApplication {
 		long client_average_dBm = 0;
 		int client_triggers = 0;
 		
-		/*
-		log.info("\n*\n*\n*\n*\n*\n*");
-		log.info("MobilityManager: publish received from " + cntx.clientHwAddress
-                                        + " in agent " + cntx.agent.getIpAddress());*/
-
-    if (debugLevel >= 1) {
-      System.out.println("[MobilityManager] Inside 'handler()'");
+    logMessage = "[MobilityManager] Inside 'handler()'";
+    if (debugLevel >= 1) System.out.println(logMessage);
+    if (logInfo >= 1) log.info(logMessage);
+    
+    if (debugLevel >= 1)
       System.out.println("[MobilityManager] 'publish' received from agent " + cntx.clientHwAddress + ", " + cntx.agent.getIpAddress());
-    }   
+    if (logInfo >= 1)
+      log.info("[MobilityManager] 'publish' received from agent " + cntx.clientHwAddress + ", " + cntx.agent.getIpAddress());
+    
 		/* The client is not registered in this controller, exit */
 		if (client == null) {
-	    if (debugLevel >= 1) {
-	      System.out.println("[MobilityManager] The agent is not registered in this controller");
-	    }  
+		  logMessage = "[MobilityManager] The agent is not registered in this controller";
+	    if (debugLevel >= 1) System.out.println(logMessage);
+	    if (logInfo >= 1) log.info(logMessage); 
 	    return;
 		}
 
@@ -142,22 +144,22 @@ public class MobilityManager extends OdinApplication {
 		// get the statistics of that client
 		MobilityStats stats = clientMap.get(cntx.clientHwAddress);
 		
-    if (debugLevel >= 1) {
+    if (debugLevel >= 1)
       System.out.println("[MobilityManager] Client statistics. RSSI: " + clientMap.get(cntx.clientHwAddress).signalStrength );
-    }
-    
-		/* Now, handoff */
+    if (logInfo >= 1)
+      log.info("[MobilityManager] Client statistics. RSSI: " + clientMap.get(cntx.clientHwAddress).signalStrength );
+
+    /* Now perform the handoff handoff */
 		
 		// The client is associated to Odin (it has an LVAP), but it does not have an associated agent
 		// If client hasn't been assigned an agent, associate it to the current AP
 		if (client.getLvap().getAgent() == null) {
-			log.info("MobilityManager: client hasn't been asigned an agent: handing off client " + cntx.clientHwAddress
-					+ " to agent " + stats.agentAddr + " at " + System.currentTimeMillis());
-
-	    if (debugLevel >= 1) {
+	    if (debugLevel >= 1)
 	      System.out.println("[MobilityManager] client hasn't been asigned an agent: handing off client " + cntx.clientHwAddress
 	          + " to agent " + stats.agentAddr + " at " + System.currentTimeMillis());
-	    }
+      if (logInfo >= 1)
+        log.info("MobilityManager: client hasn't been asigned an agent: handing off client " + cntx.clientHwAddress
+            + " to agent " + stats.agentAddr + " at " + System.currentTimeMillis());
 			
 			handoffClientToAp(cntx.clientHwAddress, stats.agentAddr);
 			updateStatsWithReassignment (stats, cntx.value, currentTimestamp, stats.agentAddr, stats.scanningResult);
@@ -168,8 +170,13 @@ public class MobilityManager extends OdinApplication {
 		// Check for out-of-range client
 		// a client has sent nothing during a certain time
 		if ((currentTimestamp - stats.lastHeard) > MOBILITY_PARAMS.idle_client_threshold) {
-			log.info("MobilityManager: client with MAC address " + cntx.clientHwAddress
-					+ " was idle longer than " + MOBILITY_PARAMS.idle_client_threshold/1000 + " sec -> Reassociating it to agent " + stats.agentAddr);
+      if (debugLevel >= 1)
+        System.out.println("MobilityManager: client with MAC address " + cntx.clientHwAddress
+            + " was idle longer than " + MOBILITY_PARAMS.idle_client_threshold/1000 + " sec -> Reassociating it to agent " + stats.agentAddr);
+      if (logInfo >= 1)
+        log.info("MobilityManager: client with MAC address " + cntx.clientHwAddress
+            + " was idle longer than " + MOBILITY_PARAMS.idle_client_threshold/1000 + " sec -> Reassociating it to agent " + stats.agentAddr);
+      
 			handoffClientToAp(cntx.clientHwAddress, stats.agentAddr);
 			updateStatsWithReassignment (stats, cntx.value, currentTimestamp, stats.agentAddr, stats.scanningResult);
 			clientMap.put(cntx.clientHwAddress,stats);
@@ -177,29 +184,34 @@ public class MobilityManager extends OdinApplication {
 		}
 		
 		if ((currentTimestamp - stats.lastHeard) > MOBILITY_PARAMS.time_reset_triggers) {
-            log.info("MobilityManager: Time threshold consumed");
-            updateStatsScans(stats,currentTimestamp, 0, 0);
-            clientMap.put(cntx.clientHwAddress,stats);
+	    logMessage = "[MobilityManager] Time threshold consumed";
+	    if (debugLevel >= 1) System.out.println(logMessage);
+	    if (logInfo >= 1) log.info(logMessage);
+
+      updateStatsScans(stats,currentTimestamp, 0, 0);
+      clientMap.put(cntx.clientHwAddress,stats);
 		}
 		
 		// this notification is from the agent that is hosting the client's LVAP, then
 		// scan, update MobilityStats and handoff.
 		if (client.getLvap().getAgent().getIpAddress().equals(cntx.agent.getIpAddress())) {
 			
-	    if (debugLevel >= 1) {
+	    if (debugLevel >= 1) 
 	      System.out.println("[MobilityManager] The notification is from the agent " + cntx.agent.getIpAddress() 
 	        + " that is hosting the client " + cntx.clientHwAddress);
-	    }
+      if (logInfo >= 1) 
+        log.info("[MobilityManager] The notification is from the agent " + cntx.agent.getIpAddress() 
+          + " that is hosting the client " + cntx.clientHwAddress);	    
 			
 			/* Scan and update statistics */
-			
 			client_signal_dBm = stats.signalStrength - 256;
 			client_average_dBm = stats.client_average - 256;
 			client_triggers = stats.client_triggers;
 			
-			log.info("MobilityManager: Triggers: "+ client_triggers);
-			log.info("MobilityManager: STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
-
+			if(logInfo >= 1) {
+			  log.info("[MobilityManager] Num triggers: " + client_triggers);
+			  log.info("[MobilityManager] STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
+			}
       if (debugLevel >= 1) {
         System.out.println("[MobilityManager] Num triggers: " + client_triggers);
         System.out.println("[MobilityManager] STA current power in this client: "+ stats.signalStrength + " (" + client_signal_dBm + "dBm)");
@@ -207,9 +219,10 @@ public class MobilityManager extends OdinApplication {
 			
 			if (client_triggers != MOBILITY_PARAMS.number_of_triggers){
 				// not enough number of triggers
-        if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] Not enough number of triggers (" + stats.client_triggers + ") required " + MOBILITY_PARAMS.number_of_triggers);
-        }			  
+			  if(logInfo >= 1)
+			    log.info("[MobilityManager] Not enough number of triggers (" + stats.client_triggers + ") required " + MOBILITY_PARAMS.number_of_triggers);
+        if (debugLevel >= 1) 
+          System.out.println("[MobilityManager] Not enough number of triggers (" + stats.client_triggers + ") required " + MOBILITY_PARAMS.number_of_triggers);		  
 			  
 				client_signal = Math.pow(10.0, (client_signal_dBm) / 10.0); // Linear power
 				//log.info("client_signal: "+ client_signal);
@@ -233,7 +246,7 @@ public class MobilityManager extends OdinApplication {
         
         clientMap.put(cntx.clientHwAddress,stats);
         
-        //log.info("MobilityManager: STA average power in this client: "+ stats.client_average + " (" + client_average_dBm + " dBm)");
+        //log.info("MobilityManager: STA average power in this client: "+ stats.client_average + " (" + client_average_dBm + " dBm)"+ ")");
         //log.info("MobilityManager: Triggers: "+ stats.client_triggers);
                 
 				return;
@@ -267,16 +280,18 @@ public class MobilityManager extends OdinApplication {
 
 				if (cntx.agent.getIpAddress().equals(agentAddr)) {
 	        // This is the agent where the STA is associated, so we don't scan
-					log.info("MobilityManager: Do not Scan for STA " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
-	        if (debugLevel >= 1) {
+				  if(logInfo >= 1)
+				    log.info("[MobilityManager] Do not Scan for STA " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
+	        if (debugLevel >= 1) 
 	          System.out.println("[MobilityManager] Do not Scan for STA " + cntx.clientHwAddress + " in agent (Skip same AP) " + agentAddr + " and channel " + getChannelFromAgent(agentAddr));
-	        }
+	        
 					continue; // Skip same AP
 				}
 
 				else {
 	        // This is NOT the agent where the STA is associated, so it has to scan for it, with the auxiliary interface, in the channel of the Agent where the STA is
-					log.info("MobilityManager: Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
+          if(logInfo >= 1)
+            log.info("[MobilityManager] Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
 					if (debugLevel >= 1) {
             System.out.println("[MobilityManager] Scanning client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()));
 					}
@@ -293,17 +308,17 @@ public class MobilityManager extends OdinApplication {
 						greaterscanningresult = lastScanningResult;
 						// update the statistics, assigning the address of this Agent (agentAddr) as the best one
 						updateStatsWithReassignment(stats, lastScanningResult, currentTimestamp, agentAddr, greaterscanningresult);
-			      if (debugLevel >= 1) {
+			      if (debugLevel >= 1) 
 			        System.out.println("[MobilityManager] Updated statistics with reassignment of STA " + cntx.clientHwAddress
 			            + " to Agent " + stats.agentAddr + " (RSSI " + stats.signalStrength + ")");
-			      }
 					}
 					else if (greaterscanningresult < lastScanningResult) { // 
 					  greaterscanningresult = lastScanningResult;
 					}
         }
         //log.info("MobilityManager: Higher Scanning result: " + greaterscanningresult);
-        log.info("MobilityManager: Scanned client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()) + " with power " + lastScanningResult);
+        if(logInfo >= 1)
+          log.info("[MobilityManager] Scanned client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()) + " with power " + lastScanningResult);
         if (debugLevel >= 1) {
           System.out.println("[MobilityManager] Scanned client " + cntx.clientHwAddress + " in agent " + agentAddr + " and channel " + getChannelFromAgent(cntx.agent.getIpAddress()) + " with power " + lastScanningResult);
         }
@@ -315,15 +330,14 @@ public class MobilityManager extends OdinApplication {
 			  // No handoff
 				stats.scanningResult = greaterscanningresult;
 				clientMap.put(cntx.clientHwAddress,stats);
-				log.info("MobilityManager: no hand off");
-				if (debugLevel >= 1) {
-          System.out.println("[MobilityManager] No hand off");
-				}
+        if(logInfo >= 1) log.info("[MobilityManager] no hand off");
+				if (debugLevel >= 1) System.out.println("[MobilityManager] No hand off");
 				return;
 			}
 			
-			log.info("MobilityManager: signal strength: new = " + stats.signalStrength + " old = " + cntx.value + " handing off client " + cntx.clientHwAddress
-						+ " to agent " + stats.agentAddr);
+      if(logInfo >= 1)
+  			log.info("[MobilityManager] signal strength: new = " + stats.signalStrength + " old = " + cntx.value + " handing off client " + cntx.clientHwAddress
+  						+ " to agent " + stats.agentAddr);
 			if (debugLevel >= 1) {
 			  System.out.println("[MobilityManager] signal strength: new = " + stats.signalStrength + " old = " + cntx.value);
         System.out.println("[MobilityManager] Ordering the hand off of STA" + cntx.clientHwAddress
@@ -407,7 +421,6 @@ public class MobilityManager extends OdinApplication {
 				setChannelToAgent(agentAddr, 11);
 				log.info ("MobilityManager: Agent channel: " + getChannelFromAgent(agentAddr));
 			}
-			
 		}
 	}
 
