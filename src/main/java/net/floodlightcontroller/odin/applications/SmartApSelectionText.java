@@ -60,8 +60,8 @@ public class SmartApSelectionText extends OdinApplication {
   /**
   * Flow detection
   */
-  private final String IPSrcAddress;				// Handle a IPSrcAddress or all IPSrcAddress ("*")
-  private final String IPDstAddress;				// Handle a IPDstAddress or all IPDstAddress ("*")
+  private final String IPSrcAddress;		// Handle a IPSrcAddress or all IPSrcAddress ("*")
+  private final String IPDstAddress;		// Handle a IPDstAddress or all IPDstAddress ("*")
   private final int protocol;						// Handle a protocol or all protocol ("*")
   private final int SrcPort;						// Handle a SrcPort or all SrcPort ("*")
   private final int DstPort;						// Handle a DstPort or all DstPort ("*")
@@ -123,6 +123,7 @@ public class SmartApSelectionText extends OdinApplication {
     }
     
     // second half of the sleep
+    // the application is about to start
     try {
       if (debugLevel >= 1) {
         System.out.println("[SmartApSelectionText] You have " + SMARTAP_TEXT_PARAMS.time_to_start/2000 + " s to start the agents");
@@ -156,6 +157,12 @@ public class SmartApSelectionText extends OdinApplication {
       for (InetAddress agentAddr: agents) {
         System.out.println("[SmartApSelectionText] Agent: " + agentAddr);
       }     
+    }
+    
+    if (num_agents == 1) {
+      if (debugLevel >= 1) {
+        System.out.println("[SmartApSelectionText] Only one agent is included in poolfile. The application will not work");
+      }
     }
     
     // check if every agent is alive
