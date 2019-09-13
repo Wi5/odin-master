@@ -67,7 +67,7 @@ public class DemoStatistics extends OdinApplication {
     int num_agents = agents.length;
     try {
     		System.out.println("[DemoStatistics] =============================================================");
-    		System.out.println("[DemoStatistics] ===================LANZANDO HTTP SERVER======================");
+    		System.out.println("[DemoStatistics] ===================STARTING HTTP SERVER======================");
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/test", new MyHandler());
         server.setExecutor(null); // creates a default executor
